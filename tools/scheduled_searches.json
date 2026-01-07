@@ -1,0 +1,20 @@
+{
+  "schedules": [
+    {
+      "keyword": "LLM",
+      "time": "13:46",
+      "repeat": "daily",
+      "enabled": true,
+      "id": "1767505512730",
+      "createdAt": "2026-01-04T05:45:12.730Z"
+    },
+    {
+      "keyword": "LLM",
+      "time": "14:55",
+      "repeat": "daily",
+      "enabled": true,
+      "id": "1767509685516",
+      "createdAt": "2026-01-04T06:54:45.516Z"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能文献推荐 - AI科研助手 研知</title>
+    <link rel="stylesheet" href="recommend.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Left Sidebar: Search and History -->
+      <aside class="left-panel">
+        <div class="panel-header">
+          <h2>智能文献推荐</h2>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+          <img src="../../img/update.png" alt="Search" class="search-icon" />
+          <input type="text" class="search-input" id="searchInput" placeholder="Search" />
+        </div>
+        
+        <!-- 定时推荐按钮 -->
+        <div class="schedule-section">
+          <button class="schedule-btn" id="scheduleBtn" title="设置定时推荐">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>定时推荐</span>
+          </button>
+        </div>
+
+        <!-- Search History -->
+        <div class="history-section">
+          <h3 class="history-title">搜索记录</h3>
+          <div class="history-list" id="historyList">
+            <!-- Search history items will be dynamically generated -->
+          </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+          <div class="nav-icon" id="navUser" title="用户">
+            <img src="../../img/user.png" alt="User" />
+          </div>
+          <div class="nav-icon" id="navMain" title="AI智能解释">
+            <img src="../../img/解释icon.png" alt="Main" />
+          </div>
+          <div class="nav-icon active" id="navRecommend" title="文献推荐">
+            <img src="../../img/文献icon.png" alt="Recommend" />
+          </div>
+          <div class="nav-icon" id="navManage" title="知识管理">
+            <img src="../../img/team.png" alt="Manage" />
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content: Recommended Articles -->
+      <main class="main-content">
+        <div class="content-header">
+          <h2 class="content-title">推荐的文章</h2>
+          <p class="content-subtitle">点击收藏至知识体系管理中</p>
+        </div>
+
+        <div class="articles-list" id="articlesList">
+          <!-- Article cards will be dynamically generated -->
+        </div>
+        
+        <!-- 翻页控件 -->
+        <div class="pagination" id="pagination" style="display: none;">
+          <button class="page-btn" id="prevPageBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            上一页
+          </button>
+          <span class="page-info" id="pageInfo">1 / 1</span>
+          <button class="page-btn" id="nextPageBtn">
+            下一页
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      </main>
+    </div>
+    
+    <!-- 通知弹窗 -->
+    <div class="notification-container" id="notificationContainer"></div>
+    
+    <!-- 定时推荐设置弹窗 -->
+    <div class="modal-overlay" id="scheduleModal" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>定时推荐设置</h3>
+          <button class="modal-close" id="modalClose">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="form-group">
+            <label>关键词</label>
+            <input type="text" id="scheduleKeyword" placeholder="例如: LLM, transformer, GAN" />
+          </div>
+          <div class="form-group">
+            <label>推荐时间</label>
+            <input type="time" id="scheduleTime" value="09:00" />
+          </div>
+          <div class="form-group">
+            <label>重复</label>
+            <select id="scheduleRepeat">
+              <option value="daily">每天</option>
+              <option value="weekdays">工作日</option>
+              <option value="weekly">每周</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>状态</label>
+            <label class="switch">
+              <input type="checkbox" id="scheduleEnabled" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" id="modalCancel">取消</button>
+          <button class="modal-btn primary" id="modalSave">保存</button>
+        </div>
+        
+        <!-- 已设置的定时任务列表 -->
+        <div class="scheduled-list">
+          <h4>已设置的定时任务</h4>
+          <div id="scheduledTasks"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="recommend.js"></script>
+  </body>
+</html>
+

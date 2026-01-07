@@ -1,0 +1,34 @@
+{
+    "folders": [
+        {
+            "name": "GAN",
+            "path": "D:/CODE/yanzhi/data/GAN",
+            "description": "生成对抗网络(Generative Adversarial Networks)相关论文，包括GAN的各种变体如DCGAN、StyleGAN、CycleGAN、WGAN等，以及图像生成、图像转换、对抗训练等应用"
+        },
+        {
+            "name": "diffusion",
+            "path": "D:/CODE/yanzhi/data/diffusion",
+            "description": "扩散模型(Diffusion Models)相关论文，包括DDPM、DDIM、Stable Diffusion、Score-based models、Flow Matching等，以及去噪、图像/视频生成等应用"
+        },
+        {
+            "name": "transformer",
+            "path": "D:/CODE/yanzhi/data/transformer",
+            "description": "这个文件夹包含关于Transformer模型的研究资料，包括最新的学术论文、学习笔记以及行业应用案例分析，主要涉及自然语言处理领域中的先进深度学习技术。"
+        },
+        {
+            "name": "强化学习",
+            "path": "D:/CODE/yanzhi/data/强化学习",
+            "description": "该文件夹包含关于强化学习的最新研究论文、可视化图像以及相关博客，涵盖了算法设计、深度学习应用、游戏智能体、机器人控制等领域。"
+        },
+        {
+            "name": "ubuntu",
+            "path": "D:/CODE/yanzhi/data/ubuntu",
+            "description": "该文件夹存放与Ubuntu操作系统相关的学术研究资料，包括论文、图像和博客，主要涉及Linux发行版的技术实现、应用案例及社区贡献等方面。"
+        },
+        {
+            "name": "图神经网络",
+            "path": "D:/CODE/yanzhi/data/图神经网络",
+            "description": "该文件夹包含关于图神经网络的研究论文、可视化图像和博客文章，涵盖了图数据处理、节点特征学习及在社交网络分析、化学分子结构预测等领域的应用。"
+        }
+    ]
+}

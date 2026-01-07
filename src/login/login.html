@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登录 - AI科研助手 研知</title>
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="background-container">
+      <img src="../../img/注册bg.png" alt="Background" class="background-image" />
+    </div>
+
+    <!-- Motto Text -->
+    <div class="motto-text">EVERYTHING IS REALIZABLE</div>
+
+    <!-- Main Card -->
+    <div class="login-container">
+      <div class="login-card">
+        <!-- Back Button -->
+        <button class="back-button" id="backButton" title="返回主页">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <!-- Profile Picture Section -->
+        <div class="profile-section">
+          <div class="profile-picture-container">
+            <img src="https://via.placeholder.com/120/cccccc/666666?text=头像" alt="Profile Picture" class="profile-picture" id="profilePicture" />
+          </div>
+        </div>
+
+        <!-- Login Form -->
+        <form class="login-form" id="loginForm">
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="" required />
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="form-actions">
+            <button type="button" class="btn-new-account" id="newAccountButton">新建账户</button>
+            <button type="submit" class="btn-login">登陆</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="login.js"></script>
+  </body>
+</html>
+

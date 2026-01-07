@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>知识体系管理 - AI科研助手 研知</title>
+    <link rel="stylesheet" href="manage.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Left Sidebar: Search and History -->
+      <aside class="left-panel">
+        <div class="panel-header">
+          <h2>知识体系管理</h2>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+          <img src="../../img/update.png" alt="Search" class="search-icon" />
+          <input type="text" class="search-input" id="searchInput" placeholder="Q Search" />
+        </div>
+
+        <!-- Search History / Results -->
+        <div class="history-section">
+          <h3 class="history-title" id="historyTitle">搜索记录</h3>
+          <div class="history-list" id="historyList">
+            <!-- Search history items will be dynamically generated -->
+          </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+          <div class="nav-icon" id="navUser" title="用户">
+            <img src="../../img/user.png" alt="User" />
+          </div>
+          <div class="nav-icon" id="navMain" title="AI智能解释">
+            <img src="../../img/解释icon.png" alt="Main" />
+          </div>
+          <div class="nav-icon" id="navRecommend" title="文献推荐">
+            <img src="../../img/文献icon.png" alt="Recommend" />
+          </div>
+          <div class="nav-icon active" id="navManage" title="知识管理">
+            <img src="../../img/team.png" alt="Manage" />
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Content Header with Tabs -->
+        <div class="content-header">
+          <h2 class="content-title">知识体系管理</h2>
+          <div class="tabs-container">
+            <button class="tab-btn active" data-tab="overview">概览</button>
+            <button class="tab-btn" data-tab="category">分类管理</button>
+            <button class="tab-btn" data-tab="items">知识条目</button>
+          </div>
+        </div>
+
+        <!-- Overview Tab Content -->
+        <div class="tab-content active" id="overviewTab">
+          <!-- Top Section: Statistics Cards -->
+          <div class="top-section">
+            <div class="stats-container">
+              <div class="stat-card" id="statTotalItems">
+                <div class="stat-header">
+                  <h3 class="stat-title">总知识条目</h3>
+                  <button class="stat-menu-btn">⋯</button>
+                </div>
+                <div class="stat-value" id="statTotalValue">0</div>
+                <div class="stat-footer">
+                  <span class="stat-change positive" id="statTotalChange">+0 本月新增</span>
+                </div>
+              </div>
+
+              <div class="stat-card" id="statCategory">
+                <div class="stat-header">
+                  <h3 class="stat-title">分类数量</h3>
+                  <button class="stat-menu-btn">⋯</button>
+                </div>
+                <div class="stat-value" id="statCategoryValue">0</div>
+                <div class="stat-footer">
+                  <span class="stat-change" id="statCategoryChange">活跃分类</span>
+                </div>
+              </div>
+
+              <div class="stat-card" id="statNotes">
+                <div class="stat-header">
+                  <h3 class="stat-title">笔记数量</h3>
+                  <button class="stat-menu-btn">⋯</button>
+                </div>
+                <div class="stat-value" id="statNotesValue">0</div>
+                <div class="stat-footer">
+                  <span class="stat-change positive" id="statNotesChange">文本笔记</span>
+                </div>
+              </div>
+
+              <div class="stat-card" id="statImages">
+                <div class="stat-header">
+                  <h3 class="stat-title">图片资料</h3>
+                  <button class="stat-menu-btn">⋯</button>
+                </div>
+                <div class="stat-value" id="statImagesValue">0</div>
+                <div class="stat-footer">
+                  <span class="stat-change" id="statImagesChange">截图和图片</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Recently Added -->
+          <div class="bottom-section">
+            <div class="recent-section">
+              <h3 class="recent-title">最近添加</h3>
+              <p class="recent-subtitle">您最近添加的知识条目</p>
+              <div class="recent-items-list" id="recentItemsList">
+                <!-- Recently added items will be dynamically generated -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Management Tab Content -->
+        <div class="tab-content" id="categoryTab">
+          <div class="category-container">
+            <div class="category-grid" id="categoryGrid">
+              <!-- Category cards will be dynamically generated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Knowledge Items Tab Content -->
+        <div class="tab-content" id="itemsTab">
+          <!-- Category Summary Section -->
+          <div class="category-summary-section">
+            <div class="category-summary-header">
+              <div class="category-summary-title">
+                <span class="category-item-count" id="categoryItemCount">0个知识条目</span>
+                <h3 class="category-name" id="categoryName">未选择分类</h3>
+              </div>
+            </div>
+            <div class="category-stats-cards">
+              <div class="category-stat-card">
+                <div class="category-stat-header">
+                  <h4 class="category-stat-title">文档数量</h4>
+                  <button class="category-stat-menu-btn">⋯</button>
+                </div>
+                <div class="category-stat-value" id="categoryDocCount">0</div>
+                <div class="category-stat-footer">
+                  <a href="#" class="category-stat-link">
+                    <span>文本笔记</span>
+                    <span class="stat-arrow positive">↑</span>
+                  </a>
+                </div>
+              </div>
+              <div class="category-stat-card">
+                <div class="category-stat-header">
+                  <h4 class="category-stat-title">图片资料</h4>
+                  <button class="category-stat-menu-btn">⋯</button>
+                </div>
+                <div class="category-stat-value" id="categoryImageCount">0</div>
+                <div class="category-stat-footer">
+                  <a href="#" class="category-stat-link">
+                    <span>截图和图片</span>
+                    <span class="stat-arrow">↓</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Knowledge Items List Section -->
+          <div class="knowledge-items-section">
+            <h3 class="knowledge-items-title" id="knowledgeItemsTitle">知识条目分类管理: 未选择分类</h3>
+            <div class="knowledge-items-list" id="knowledgeItemsList">
+              <!-- Knowledge items will be dynamically generated -->
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="manage.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>主界面 - AI科研助手 研知</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Left Panel: Document Storage -->
+      <aside class="left-panel">
+        <div class="panel-header">
+          <h2>文献储存情况</h2>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+          <img src="../../img/update.png" alt="Search" class="search-icon" />
+          <input type="text" class="search-input" id="searchInput" placeholder="Search" />
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="action-btn" id="uploadBtn" title="打开文件夹">
+            <img src="../../img/Folder.png" alt="Open Folder" class="btn-icon" />
+            <span>打开</span>
+          </button>
+          <div class="new-btn-wrapper">
+            <button class="action-btn" id="newFolderBtn" title="新建">
+              <img src="../../img/new-folder.png" alt="New" class="btn-icon" />
+              <span>新建</span>
+            </button>
+            <div class="dropdown-menu" id="newDropdown">
+              <div class="dropdown-item" id="newFolderOption">
+                <img src="../../img/Folder.png" alt="Folder" class="dropdown-icon" />
+                <span>新建文件夹</span>
+              </div>
+              <div class="dropdown-item has-submenu" id="newNoteOption">
+                <img src="../../img/chat-bot.png" alt="Note" class="dropdown-icon" />
+                <span>新建笔记</span>
+                <svg class="submenu-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                <div class="submenu">
+                  <div class="dropdown-item" id="newTemplateOption">
+                    <img src="../../img/file.png" alt="Template" class="dropdown-icon" />
+                    <span>选择模板</span>
+                  </div>
+                  <div class="dropdown-item" id="newCustomTemplateOption">
+                    <img src="../../img/new-folder.png" alt="Custom Template" class="dropdown-icon" />
+                    <span>新建自定义模板</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="action-btn refresh-btn" id="refreshBtn" title="刷新文件列表">
+            <img src="../../img/update.png" alt="Refresh" class="btn-icon" id="refreshIcon" />
+          </button>
+        </div>
+        
+        <!-- 文件夹状态指示 -->
+        <div class="folder-status" id="folderStatus">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">未打开文件夹</span>
+        </div>
+
+        <!-- File Tree -->
+        <div class="file-tree" id="fileTree">
+          <!-- Folders and files will be dynamically generated -->
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+          <div class="nav-icon" id="navUser" title="用户">
+            <img src="../../img/user.png" alt="User" />
+          </div>
+          <div class="nav-icon active" id="navMain" title="AI智能解释">
+            <img src="../../img/解释icon.png" alt="Main" />
+          </div>
+          <div class="nav-icon" id="navRecommend" title="文献推荐">
+            <img src="../../img/文献icon.png" alt="Recommend" />
+          </div>
+          <div class="nav-icon" id="navManage" title="知识管理">
+            <img src="../../img/team.png" alt="Manage" />
+          </div>
+        </div>
+      </aside>
+
+      <!-- Middle Panel: Display Area -->
+      <main class="middle-panel">
+        <div class="panel-header">
+          <h2>展示区域</h2>
+        </div>
+        <div class="display-area" id="displayArea">
+          <div class="empty-state">
+            <img src="../../img/Folder.png" alt="Folder" class="empty-icon" />
+            <p>选择一个文件内容进行查看</p>
+          </div>
+        </div>
+        
+        <!-- Template Selection View -->
+        <div class="template-view" id="templateView" style="display: none;">
+          <div class="template-header">
+            <h2>笔记模板管理</h2>
+            <p>创建和管理你的模板库</p>
+          </div>
+          <div class="template-grid" id="templateGrid">
+            <!-- Templates will be dynamically generated -->
+          </div>
+          <button class="new-template-btn" id="newTemplateBtn">新建笔记模板</button>
+        </div>
+        
+        <!-- Template Editor View -->
+        <div class="template-editor-view" id="templateEditorView" style="display: none;">
+          <div class="editor-header">
+            <div class="editor-title-section">
+              <h2 id="editorTitle">新建自定义模板</h2>
+              <div class="editor-meta">
+                <span id="editorDate">12/23/2026</span>
+                <span id="editorSize">2.3 MB</span>
+              </div>
+            </div>
+            <div class="editor-menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </div>
+          </div>
+          <div class="editor-content">
+            <div class="editor-field">
+              <label>标题</label>
+              <input type="text" id="templateTitleInput" class="editor-input" placeholder="请输入模板标题" />
+            </div>
+            <div class="editor-field">
+              <label>正文内容</label>
+              <textarea id="templateContentInput" class="editor-textarea" placeholder="请输入模板内容（Markdown格式）"></textarea>
+            </div>
+          </div>
+          <div class="editor-actions">
+            <button class="editor-btn cancel-btn" id="editorCancelBtn">取消</button>
+            <button class="editor-btn save-btn" id="editorSaveBtn">保存</button>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Panel: AI Smart Explanation -->
+      <aside class="right-panel">
+        <div class="panel-header">
+          <h2>AI 智能解释</h2>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+          <!-- Chat messages will be dynamically generated -->
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+          <div class="file-drop-zone" id="fileDropZone">
+            <p>请拖入一个文件开始AI对话</p>
+          </div>
+          <div class="input-wrapper">
+            <input type="text" class="chat-input" id="chatInput" placeholder="输入你的问题..." />
+            <button class="send-btn" id="sendBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          <button class="template-btn" id="templateBtn">
+            <img src="../../img/robot.png" alt="Template" class="template-icon" />
+            <span>笔记模板</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Hidden file input for upload -->
+    <input type="file" id="fileInput" multiple style="display: none;" />
+    <input type="file" id="folderInput" webkitdirectory multiple style="display: none;" />
+
+    <script src="main.js"></script>
+  </body>
+</html>

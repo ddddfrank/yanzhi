@@ -1,0 +1,9 @@
+# AI 客户端相关
+openai
+Pillow
+
+# PDF 处理（OCR 读取）
+PyMuPDF
+
+# Arxiv 论文搜索
+arxiv

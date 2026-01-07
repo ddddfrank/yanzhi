@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>注册 - AI科研助手 研知</title>
+    <link rel="stylesheet" href="register.css" />
+  </head>
+  <body>
+    <!-- Background -->
+    <div class="background-container">
+      <img src="../../img/注册bg.png" alt="Background" class="background-image" />
+    </div>
+
+    <!-- Main Card -->
+    <div class="register-container">
+      <div class="register-card">
+        <!-- Back Button -->
+        <button class="back-button" id="backButton" title="返回主页">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <!-- Profile Picture Section -->
+        <div class="profile-section">
+          <div class="profile-picture-container">
+            <img src="https://via.placeholder.com/120/cccccc/666666?text=头像" alt="Profile Picture" class="profile-picture" id="profilePicture" />
+          </div>
+          <div class="profile-actions">
+            <button class="icon-button" id="uploadButton" title="上传头像">
+              <img src="../../img/update.png" alt="Upload" class="action-icon" />
+            </button>
+            <button class="icon-button" id="deleteButton" title="删除头像">
+              <img src="../../img/delete.png" alt="Delete" class="action-icon" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Input Fields Section -->
+        <form class="register-form" id="registerForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="username">用户名</label>
+              <input type="text" id="username" name="username" placeholder="Text" required />
+            </div>
+            <div class="form-group">
+              <label for="identity">您的身份</label>
+              <div class="select-wrapper">
+                <select id="identity" name="identity" required>
+                  <option value="">Choose</option>
+                  <option value="student">学生</option>
+                  <option value="researcher">研究员</option>
+                  <option value="professor">教授</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="field">学科领域</label>
+              <div class="select-wrapper">
+                <select id="field" name="field" required>
+                  <option value="">Choose</option>
+                  <option value="computer">计算机科学</option>
+                  <option value="physics">物理学</option>
+                  <option value="chemistry">化学</option>
+                  <option value="biology">生物学</option>
+                  <option value="engineering">工程学</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="birthday">生日</label>
+              <div class="date-input-wrapper">
+                <input type="date" id="birthday" name="birthday" placeholder="Choose the date" required />
+                <img src="../../img/calendar.png" alt="Calendar" class="calendar-icon" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="email">您的邮箱</label>
+              <input type="email" id="email" name="email" placeholder="..." required />
+            </div>
+            <div class="form-group">
+              <label for="password">您的密码</label>
+              <input type="password" id="password" name="password" placeholder="请输入密码" required />
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="form-actions">
+            <button type="submit" class="btn-confirm">确认</button>
+            <button type="button" class="btn-cancel" id="cancelButton">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Hidden file input for profile picture upload -->
+    <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+
+    <script src="register.js"></script>
+  </body>
+</html>
+
