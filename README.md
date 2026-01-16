@@ -3,10 +3,10 @@
 研知科研助手是一款专为科研人员打造的智能化工具，旨在通过 AI 技术简化文献管理、笔记整理及知识体系构建流程，全面提升科研效率。
 
 合作者：
-@liulixin- [liulixin](https://github.com/liulixin)
-@17825470707yx-sketch- [17825470707yx-sketch](https://github.com/17825470707yx-sketch)
-@soulll1- [soulll1](https://github.com/soulll1)
-@ZC_N- [ZC_N](https://github.com/ZC_N)
+- @liulixin- [liulixin](https://github.com/liulx25xx)
+- @17825470707yx-sketch- [17825470707yx-sketch](https://github.com/17825470707yx-sketch)
+- @soulll1- [soulll1](https://github.com/soulll1)
+- @ZC_N- [ZC_N](https://github.com/Anachronism-N)
 
 
 
