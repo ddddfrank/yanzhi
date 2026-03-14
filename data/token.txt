@@ -1,1 +1,0 @@
-$env:SILICONFLOWAPI_KEY = "你的API_KEY"
