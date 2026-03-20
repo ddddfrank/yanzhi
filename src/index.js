@@ -142,6 +142,82 @@ const createWindow = () => {
   mainLog.info('createWindow', { width: 1400, height: 900, startupPage });
   mainWindow.loadFile(startupPage);
 
+  // 页面加载完成后注入AI助手
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('[AI] 开始加载研知AI助手...');
+
+    try {
+      // 读取AI助手HTML文件
+      const path = require('path'); // Node.js内置的路径处理模块，必须先引入
+      const aibotHtmlPath = path.join(__dirname, 'aibot', 'aibot.html');
+      const aibotHtml = fs.readFileSync(aibotHtmlPath, 'utf-8');
+
+      // 提取CSS和JS内容（因为它们引用相对路径）
+      // 注意：主页面在 src/main/ 目录下，所以需要使用 ../aibot/ 路径
+      const injectScript = `
+        (function() {
+          const injectAIAssistant = () => {
+            // 创建AI助手CSS链接
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = '../aibot/aibot.css';
+            document.head.appendChild(cssLink);
+
+            // 创建AI助手容器
+            const aibotContainer = document.createElement('div');
+            aibotContainer.id = 'aibot-container';
+            document.body.appendChild(aibotContainer);
+
+            // 创建AI助手脚本
+            const script = document.createElement('script');
+            script.src = '../aibot/aibot.js';
+            script.onload = () => {
+              console.log('[AI] 研知AI助手脚本加载完成');
+              // 手动初始化AI助手（因为DOMContentLoaded已经触发过了）
+              if (typeof YanzhiAIBot !== 'undefined') {
+                window.yanzhiAIBot = new YanzhiAIBot();
+                console.log('[AI] 研知AI助手已手动初始化');
+              }
+            };
+            document.body.appendChild(script);
+
+            // 注入AI助手的HTML结构（从aibot.html提取）
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(${JSON.stringify(aibotHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/g, ''))}, 'text/html');
+            const trigger = doc.getElementById('aibot-trigger');
+            const aibotWindow = doc.getElementById('aibot-window');
+            if (trigger) {
+              document.body.appendChild(trigger);
+              console.log('[AI] AI助手触发按钮已添加');
+            }
+            if (aibotWindow) {
+              document.body.appendChild(aibotWindow);
+              console.log('[AI] AI助手窗口已添加');
+            }
+          };
+
+          // 等待DOM准备好后注入
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectAIAssistant);
+          } else {
+            injectAIAssistant();
+          }
+        })();
+      `;
+
+      mainWindow.webContents.executeJavaScript(injectScript)
+        .then(() => {
+          console.log('[AI] AI助手注入完成');
+        })
+        .catch((error) => {
+          console.error('[AI] AI助手注入失败:', error);
+        });
+
+    } catch (error) {
+      console.error('[AI] 读取AI助手文件失败:', error);
+    }
+  });
+
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 
@@ -350,7 +426,7 @@ ipcMain.handle('workspace:setActive', async (event, folderPath) => {
         console.error('❌ 创建“其他”文件夹失败:', e);
       }
     }
-    
+
     // 确保“其他”文件夹下的子文件夹存在
     if (fs.existsSync(otherPath)) {
       const subFolders = ['images', '博客', '文章'];
@@ -410,11 +486,11 @@ ipcMain.handle('workspace:getActive', async () => {
     success: true,
     active: active
       ? {
-          workspaceId: active.workspaceId,
-          workspacePath: active.workspacePath,
-          normalizedPath: active.normalizedPath,
-          workspaceDataDir: active.dataDir,
-        }
+        workspaceId: active.workspaceId,
+        workspacePath: active.workspacePath,
+        normalizedPath: active.normalizedPath,
+        workspaceDataDir: active.dataDir,
+      }
       : null,
   };
 });
@@ -434,7 +510,7 @@ ipcMain.handle('workspace:getStats', async () => {
     }
 
     const summaryData = JSON.parse(fs.readFileSync(summaryFile, 'utf-8'));
-    const structureData = fs.existsSync(structureFile) 
+    const structureData = fs.existsSync(structureFile)
       ? JSON.parse(fs.readFileSync(structureFile, 'utf-8'))
       : { folders: [] };
 
@@ -486,13 +562,13 @@ ipcMain.handle('workspace:getCategoryDetail', async (event, categoryName) => {
     } else {
       detailFile = path.join(workspaceScanner.currentWorkspace.dataDir, `${categoryName}.json`);
     }
-    
+
     if (!fs.existsSync(detailFile)) {
       return { success: false, error: '分类详情文件不存在' };
     }
 
     const detailData = JSON.parse(fs.readFileSync(detailFile, 'utf-8'));
-    
+
     return {
       success: true,
       category: categoryName,
@@ -509,83 +585,83 @@ ipcMain.handle('workspace:getCategoryDetail', async (event, categoryName) => {
 // 生成知识脉络图
 ipcMain.handle('workspace:generateMap', async (event, folderPath) => {
   try {
-      console.log(`[KnowledgeMap] 开始为目录生成基于子文件夹的脉络图: ${folderPath}`);
-      const aiClient = getAIClient('你是一个专业的学术与知识整理助手。');
+    console.log(`[KnowledgeMap] 开始为目录生成基于子文件夹的脉络图: ${folderPath}`);
+    const aiClient = getAIClient('你是一个专业的学术与知识整理助手。');
 
-      // 递归获取支持的文件
-      const getTargetFiles = (dir) => {
-        let results = [];
-        if (!fs.existsSync(dir)) return results;
-        const list = fs.readdirSync(dir);
-        for (const file of list) {
-          const fullPath = path.join(dir, file);
-          const stat = fs.statSync(fullPath);
-          if (stat.isDirectory()) {
-            results = results.concat(getTargetFiles(fullPath));
-          } else {
-            const ext = path.extname(fullPath).toLowerCase();
-            if (['.md', '.txt', '.pdf', '.png', '.jpg', '.jpeg', '.webp'].includes(ext) && !file.startsWith('_Knowledge_Map')) {
-              results.push(fullPath);
-            }
-          }
-        }
-        return results;
-      };
-
-      // 提取提纲的复用方法
-      const processSingleFile = async (filePath) => {
-        let content = '';
-        const ext = path.extname(filePath).toLowerCase();
-        try {
-            if (['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
-              console.log(`[KnowledgeMap] 正在使用图片多模态分析: ${path.basename(filePath)}...`);
-              const base64Data = fs.readFileSync(filePath).toString('base64');
-              const dataUrl = `data:image/${ext.replace('.', '')};base64,${base64Data}`;
-              const summary = await aiClient.ask("请用一两句话极其客观地概括这张图片和图表的核心有效内容，不准进行无关的个人发散或编造。", dataUrl, 0.5, 300);
-              return `【图片文件：${path.basename(filePath)}】：${summary}`;
-            }
-
-            if (ext === '.pdf') {
-              const pdfResult = await readPdf(filePath, 3);
-              if (pdfResult.success) content = pdfResult.content;
-            } else {
-              content = fs.readFileSync(filePath, 'utf-8');
-            }
-            
-            if (content && content.trim()) {
-                const truncatedCmd = content.substring(0, 2000);
-                const filePrompt = `你是一个严谨的信息提取助手。现有一份文档，请用一两句话简要概括其核心内容。强烈要求：必须完全按照文档的实际内容输出，绝对不允许凭空捏造、瞎编任何原文不存在的信息！\n\n文档内容：\n${truncatedCmd}`;
-                const fileSummary = await aiClient.ask(filePrompt, null, 0.5, 300);
-                return `【文件：${path.basename(filePath)}】：${fileSummary}`;
-            }
-            return `【文件：${path.basename(filePath)}】：无有效文本内容可以提取`;
-        } catch (err) {
-          return `【文件：${path.basename(filePath)}】：内容提取失败（${err.message}）`;
-        }
-      };
-
-      const topLevelItems = fs.readdirSync(folderPath);
-      const rootSummaries = []; // 存放所有子版块及根目录下文件的最终总结
-
-      // 以每个一级子文件夹为一个处理单位
-      for (const item of topLevelItems) {
-        if (item.startsWith('.')) continue; // 忽略隐藏文件夹如.git
-        const itemPath = path.join(folderPath, item);
-        const stat = fs.statSync(itemPath);
-
+    // 递归获取支持的文件
+    const getTargetFiles = (dir) => {
+      let results = [];
+      if (!fs.existsSync(dir)) return results;
+      const list = fs.readdirSync(dir);
+      for (const file of list) {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
         if (stat.isDirectory()) {
-          console.log(`[KnowledgeMap] 开始处理子文件夹区块: ${item}`);
-          const subFiles = getTargetFiles(itemPath);
-          if (subFiles.length === 0) continue;
-
-          const subSummaries = [];
-          for (const subFile of subFiles) {
-            const sum = await processSingleFile(subFile);
-            if (sum) subSummaries.push(sum);
+          results = results.concat(getTargetFiles(fullPath));
+        } else {
+          const ext = path.extname(fullPath).toLowerCase();
+          if (['.md', '.txt', '.pdf', '.png', '.jpg', '.jpeg', '.webp'].includes(ext) && !file.startsWith('_Knowledge_Map')) {
+            results.push(fullPath);
           }
+        }
+      }
+      return results;
+    };
 
-          const subText = subSummaries.join('\n\n');
-            const promptSub = `你是一个严谨的学术整理助手。请根据以下各个文件的真实简介，仅仅梳理出【${item}】文件夹下的客观引导目录(Index)。
+    // 提取提纲的复用方法
+    const processSingleFile = async (filePath) => {
+      let content = '';
+      const ext = path.extname(filePath).toLowerCase();
+      try {
+        if (['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
+          console.log(`[KnowledgeMap] 正在使用图片多模态分析: ${path.basename(filePath)}...`);
+          const base64Data = fs.readFileSync(filePath).toString('base64');
+          const dataUrl = `data:image/${ext.replace('.', '')};base64,${base64Data}`;
+          const summary = await aiClient.ask("请用一两句话极其客观地概括这张图片和图表的核心有效内容，不准进行无关的个人发散或编造。", dataUrl, 0.5, 300);
+          return `【图片文件：${path.basename(filePath)}】：${summary}`;
+        }
+
+        if (ext === '.pdf') {
+          const pdfResult = await readPdf(filePath, 3);
+          if (pdfResult.success) content = pdfResult.content;
+        } else {
+          content = fs.readFileSync(filePath, 'utf-8');
+        }
+
+        if (content && content.trim()) {
+          const truncatedCmd = content.substring(0, 2000);
+          const filePrompt = `你是一个严谨的信息提取助手。现有一份文档，请用一两句话简要概括其核心内容。强烈要求：必须完全按照文档的实际内容输出，绝对不允许凭空捏造、瞎编任何原文不存在的信息！\n\n文档内容：\n${truncatedCmd}`;
+          const fileSummary = await aiClient.ask(filePrompt, null, 0.5, 300);
+          return `【文件：${path.basename(filePath)}】：${fileSummary}`;
+        }
+        return `【文件：${path.basename(filePath)}】：无有效文本内容可以提取`;
+      } catch (err) {
+        return `【文件：${path.basename(filePath)}】：内容提取失败（${err.message}）`;
+      }
+    };
+
+    const topLevelItems = fs.readdirSync(folderPath);
+    const rootSummaries = []; // 存放所有子版块及根目录下文件的最终总结
+
+    // 以每个一级子文件夹为一个处理单位
+    for (const item of topLevelItems) {
+      if (item.startsWith('.')) continue; // 忽略隐藏文件夹如.git
+      const itemPath = path.join(folderPath, item);
+      const stat = fs.statSync(itemPath);
+
+      if (stat.isDirectory()) {
+        console.log(`[KnowledgeMap] 开始处理子文件夹区块: ${item}`);
+        const subFiles = getTargetFiles(itemPath);
+        if (subFiles.length === 0) continue;
+
+        const subSummaries = [];
+        for (const subFile of subFiles) {
+          const sum = await processSingleFile(subFile);
+          if (sum) subSummaries.push(sum);
+        }
+
+        const subText = subSummaries.join('\n\n');
+        const promptSub = `你是一个严谨的学术整理助手。请根据以下各个文件的真实简介，仅仅梳理出【${item}】文件夹下的客观引导目录(Index)。
 基本要求：
 1. 你的总结必须百分之百基于提供的文本内容！绝对不允许产生幻觉或编造任何不存在的关联、作者或内容！
 2. 请简要介绍这个子文件夹的整体定位，并重点以列表形式列出各个文件大概讲述了什么客观内容。
@@ -593,29 +669,29 @@ ipcMain.handle('workspace:generateMap', async (event, folderPath) => {
 4. 【重要】：当你在正文或列表中提到具体的「原文件名称」时，必须使用加粗语法（如 **文件名.pdf** ）或反引号（如 \`文件名.pdf\` ）进行显眼的特殊标记，方便用户快速识别。
 
 内容如下：\n${subText}`;
-          const subMapContent = await aiClient.ask(promptSub, null, 0.6, 1500);
+        const subMapContent = await aiClient.ask(promptSub, null, 0.6, 1500);
 
-          // 保存子文件夹的 md
-          fs.writeFileSync(path.join(itemPath, `_Knowledge_Map_${item}.md`), subMapContent, 'utf-8');
-          rootSummaries.push(`\n### 版块：【${item}】的内容脉络\n${subMapContent}\n`);
-          
-        } else {
-          // 位于根目录的平铺文件
-          const ext = path.extname(item).toLowerCase();
-          if (['.md', '.txt', '.pdf', '.png', '.jpg', '.jpeg', '.webp'].includes(ext) && !item.startsWith('_Knowledge_Map')) {
-             const singleSum = await processSingleFile(itemPath);
-             if (singleSum) rootSummaries.push(`\n### 独立文件：【${item}】\n${singleSum}\n`);
-          }
+        // 保存子文件夹的 md
+        fs.writeFileSync(path.join(itemPath, `_Knowledge_Map_${item}.md`), subMapContent, 'utf-8');
+        rootSummaries.push(`\n### 版块：【${item}】的内容脉络\n${subMapContent}\n`);
+
+      } else {
+        // 位于根目录的平铺文件
+        const ext = path.extname(item).toLowerCase();
+        if (['.md', '.txt', '.pdf', '.png', '.jpg', '.jpeg', '.webp'].includes(ext) && !item.startsWith('_Knowledge_Map')) {
+          const singleSum = await processSingleFile(itemPath);
+          if (singleSum) rootSummaries.push(`\n### 独立文件：【${item}】\n${singleSum}\n`);
         }
       }
+    }
 
-      if (rootSummaries.length === 0) {
-        return { success: false, error: '未找到任何支持扫描的文件' };
-      }
+    if (rootSummaries.length === 0) {
+      return { success: false, error: '未找到任何支持扫描的文件' };
+    }
 
-      console.log(`[KnowledgeMap] 所有版块处理完成，开始生成全局脉络大图...`);
-      const allText = rootSummaries.join('\n\n=====\n\n');
-const promptFinal = `你是一个非常严谨的学术整理助手。请紧密且完全依赖以下各个子版块的引导目录内容，生成整个主文件夹的全局导引索引(Global Index)。
+    console.log(`[KnowledgeMap] 所有版块处理完成，开始生成全局脉络大图...`);
+    const allText = rootSummaries.join('\n\n=====\n\n');
+    const promptFinal = `你是一个非常严谨的学术整理助手。请紧密且完全依赖以下各个子版块的引导目录内容，生成整个主文件夹的全局导引索引(Global Index)。
 基本要求：
 1. 【红线警告】：绝对不允许自己编造、发散或产生任何原文中没有覆盖的幻觉信息！！！所有的梳理必须建立在给定的数据之上。
 2. 说明各个子版块主要涵盖了什么内容和它们之间的客观宏观逻辑关联，帮助用户能快速了解该工作区的真实知识结构。
@@ -624,12 +700,12 @@ const promptFinal = `你是一个非常严谨的学术整理助手。请紧密�
 
 各个区块真实输入数据如下：\n${allText}`;
 
-        const finalMapContent = await aiClient.ask(promptFinal, null, 0.6, 2500);
-        const outputFilePath = path.join(folderPath, '_Knowledge_Map.md');
-        fs.writeFileSync(outputFilePath, finalMapContent, 'utf-8');
-        console.log(`[KnowledgeMap] 全局知识脉络图生成成功: ${outputFilePath}`);
+    const finalMapContent = await aiClient.ask(promptFinal, null, 0.6, 2500);
+    const outputFilePath = path.join(folderPath, '_Knowledge_Map.md');
+    fs.writeFileSync(outputFilePath, finalMapContent, 'utf-8');
+    console.log(`[KnowledgeMap] 全局知识脉络图生成成功: ${outputFilePath}`);
 
-        return { success: true, mapFilePath: outputFilePath };
+    return { success: true, mapFilePath: outputFilePath };
   } catch (e) {
     console.error('[KnowledgeMap] 生成过程中抛出错误:', e);
     return { success: false, error: e.message };
@@ -642,11 +718,11 @@ ipcMain.handle('folder:open', async () => {
     properties: ['openDirectory'],
     title: '选择文件夹'
   });
-  
+
   if (result.canceled || result.filePaths.length === 0) {
     return { success: false, message: '用户取消' };
   }
-  
+
   const folderPath = result.filePaths[0];
   return { success: true, path: folderPath };
 });
@@ -677,18 +753,18 @@ ipcMain.handle('folder:watch', async (event, folderPath) => {
       folderWatcher.close();
       folderWatcher = null;
     }
-    
+
     watchedFolderPath = folderPath;
-    
+
     // 使用 fs.watch 监听文件夹（递归监听）
     folderWatcher = fs.watch(folderPath, { recursive: true }, (eventType, filename) => {
       console.log(`[FileWatch] ${eventType}: ${filename}`);
-      
+
       // 防抖处理，避免频繁触发
       if (watchDebounceTimer) {
         clearTimeout(watchDebounceTimer);
       }
-      
+
       watchDebounceTimer = setTimeout(() => {
         // 通知渲染进程文件夹有变化
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -700,14 +776,14 @@ ipcMain.handle('folder:watch', async (event, folderPath) => {
         }
       }, 500);  // 500ms 防抖
     });
-    
+
     folderWatcher.on('error', (err) => {
       console.error('[FileWatch] 监听错误:', err);
     });
-    
+
     console.log('[FileWatch] 开始监听:', folderPath);
     return { success: true, message: '开始监听' };
-    
+
   } catch (err) {
     console.error('[FileWatch] 启动监听失败:', err);
     return { success: false, error: err.message };
@@ -742,24 +818,24 @@ function getFileType(filename) {
 ipcMain.handle('folder:create', async (event, folderName, basePath) => {
   try {
     const fullPath = path.join(basePath, folderName);
-    
+
     // 检查父目录是否存在，如果不存在则尝试创建（递归）
     if (!fs.existsSync(basePath)) {
-        try {
-            fs.mkdirSync(basePath, { recursive: true });
-        } catch (e) {
-            console.error(`无法创建父目录 ${basePath}:`, e);
-            // 尝试继续，可能会失败
-        }
+      try {
+        fs.mkdirSync(basePath, { recursive: true });
+      } catch (e) {
+        console.error(`无法创建父目录 ${basePath}:`, e);
+        // 尝试继续，可能会失败
+      }
     }
 
     if (fs.existsSync(fullPath)) {
       return { success: false, error: '文件夹已存在' };
     }
-    
+
     // 创建主文件夹
     fs.mkdirSync(fullPath, { recursive: true });
-    
+
     // 自动创建标准子目录
     const subDirs = ['images', '博客', '文章'];
     for (const subDir of subDirs) {
@@ -775,7 +851,7 @@ ipcMain.handle('folder:create', async (event, folderName, basePath) => {
     if (!fs.existsSync(mdFilePath)) {
       fs.writeFileSync(mdFilePath, mdContent, 'utf-8');
     }
-    
+
     console.log('[CreateFolder] 成功创建文件夹及其子目录:', fullPath);
     return { success: true, path: fullPath, description: '新建子文件夹（已包含 images/博客/文章 及默认笔记）' };
   } catch (error) {
@@ -877,14 +953,14 @@ ipcMain.handle('file:write', async (event, filePath, content) => {
 ipcMain.handle('file:copy', async (event, filePath) => {
   try {
     const { clipboard, nativeImage } = require('electron');
-    
+
     if (!fs.existsSync(filePath)) {
       return { success: false, error: '文件不存在' };
     }
-    
+
     const ext = path.extname(filePath).toLowerCase();
     const fileName = path.basename(filePath);
-    
+
     // 对于图片文件，复制图片内容
     if (['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext)) {
       const image = nativeImage.createFromPath(filePath);
@@ -896,7 +972,7 @@ ipcMain.handle('file:copy', async (event, filePath) => {
       clipboard.writeBuffer('public.file-url', Buffer.from(`file://${filePath}`));
       console.log('[File] 已复制文件到剪贴板:', filePath);
     }
-    
+
     return { success: true, fileName: fileName };
   } catch (err) {
     console.error('[File] 复制文件失败:', err);
@@ -954,30 +1030,30 @@ ipcMain.handle('arxiv:search', async (event, query, maxResults = 5) => {
 ipcMain.handle('arxiv:download', async (event, pdfUrl, title) => {
   return new Promise(async (resolve) => {
     const tempDir = path.join(__dirname, '..', 'temp');
-    
+
     // 确保 temp 文件夹存在
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    
+
     // 清理文件名
     const safeTitle = title.replace(/[<>:"/\\|?*]/g, '_').substring(0, 100);
     const filename = `${safeTitle}.pdf`;
     const filePath = path.join(tempDir, filename);
-    
+
     console.log('[Arxiv] 下载 PDF:', pdfUrl);
     console.log('[Arxiv] 保存到:', filePath);
-    
+
     try {
       // 使用 https 模块下载
       const https = require('https');
       const http = require('http');
-      
+
       const downloadFile = (url, dest) => {
         return new Promise((res, rej) => {
           const protocol = url.startsWith('https') ? https : http;
           const file = fs.createWriteStream(dest);
-          
+
           const request = protocol.get(url, (response) => {
             // 处理重定向
             if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
@@ -986,28 +1062,28 @@ ipcMain.handle('arxiv:download', async (event, pdfUrl, title) => {
               downloadFile(response.headers.location, dest).then(res).catch(rej);
               return;
             }
-            
+
             if (response.statusCode !== 200) {
               file.close();
               fs.unlinkSync(dest);
               rej(new Error(`下载失败: HTTP ${response.statusCode}`));
               return;
             }
-            
+
             response.pipe(file);
-            
+
             file.on('finish', () => {
               file.close();
               res();
             });
           });
-          
+
           request.on('error', (err) => {
             file.close();
             if (fs.existsSync(dest)) fs.unlinkSync(dest);
             rej(err);
           });
-          
+
           // 设置超时
           request.setTimeout(60000, () => {
             request.destroy();
@@ -1017,12 +1093,12 @@ ipcMain.handle('arxiv:download', async (event, pdfUrl, title) => {
           });
         });
       };
-      
+
       await downloadFile(pdfUrl, filePath);
-      
+
       console.log('[Arxiv] 下载完成:', filePath);
       resolve({ success: true, path: filePath, filename });
-      
+
     } catch (err) {
       console.error('[Arxiv] 下载失败:', err);
       resolve({ success: false, error: err.message });
@@ -1120,26 +1196,26 @@ function checkScheduledTasks() {
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   const currentDay = now.getDay(); // 0 = Sunday
-  
+
   // 避免同一分钟内重复触发
   const currentMinuteKey = currentHour * 60 + currentMinute;
   if (currentMinuteKey === lastCheckedMinute) {
     return;
   }
   lastCheckedMinute = currentMinuteKey;
-  
+
   const config = loadScheduleConfig();
-  
+
   for (const schedule of config.schedules) {
     if (!schedule.enabled) continue;
-    
+
     const [scheduleHour, scheduleMinute] = schedule.time.split(':').map(Number);
-    
+
     // 检查时间是否匹配
     if (currentHour !== scheduleHour || currentMinute !== scheduleMinute) {
       continue;
     }
-    
+
     // 检查重复规则
     let shouldTrigger = false;
     switch (schedule.repeat) {
@@ -1153,7 +1229,7 @@ function checkScheduledTasks() {
         shouldTrigger = currentDay === 1; // 每周一
         break;
     }
-    
+
     if (shouldTrigger) {
       console.log('[Schedule] 触发定时搜索:', schedule.keyword);
       triggerScheduledSearch(schedule);
@@ -1210,7 +1286,7 @@ function startScheduleChecker() {
   if (scheduleCheckInterval) {
     clearInterval(scheduleCheckInterval);
   }
-  
+
   // 每30秒检查一次
   scheduleCheckInterval = setInterval(checkScheduledTasks, 30000);
   console.log('[Schedule] 定时检查器已启动');
@@ -1220,13 +1296,13 @@ function startScheduleChecker() {
 ipcMain.handle('schedule:save', async (event, scheduleData) => {
   try {
     const config = loadScheduleConfig();
-    
+
     // 生成唯一ID
     scheduleData.id = Date.now().toString();
     scheduleData.createdAt = new Date().toISOString();
-    
+
     config.schedules.push(scheduleData);
-    
+
     if (saveScheduleConfig(config)) {
       console.log('[Schedule] 保存成功:', scheduleData);
       return { success: true, schedule: scheduleData };
@@ -1268,15 +1344,15 @@ ipcMain.handle('schedule:delete', async (event, id) => {
 
 // 检查文献是否已在库
 ipcMain.handle('arxiv:checkPresence', async (event, arxivId) => {
-    try {
-        if (!workspaceScanner?.currentWorkspace) {
-            return { exists: false };
-        }
-        const found = metadataManager.findLocalByArxivId(arxivId, workspaceScanner.currentWorkspace.workspacePath);
-        return { exists: !!found, path: found };
-    } catch (err) {
-        return { exists: false, error: err.message };
+  try {
+    if (!workspaceScanner?.currentWorkspace) {
+      return { exists: false };
     }
+    const found = metadataManager.findLocalByArxivId(arxivId, workspaceScanner.currentWorkspace.workspacePath);
+    return { exists: !!found, path: found };
+  } catch (err) {
+    return { exists: false, error: err.message };
+  }
 });
 
 // Agent 智能处理 IPC
