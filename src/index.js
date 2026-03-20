@@ -506,7 +506,7 @@ ipcMain.handle('workspace:getCategoryDetail', async (event, categoryName) => {
   }
 });
 
-// 生成知识脉络图
+// 生成知识脉络图（两步：1.AI 生成内容 2.在工作区文件索引中检索文件名并注入链接）
 ipcMain.handle('workspace:generateMap', async (event, folderPath) => {
   try {
       console.log(`[KnowledgeMap] 开始为目录生成基于子文件夹的脉络图: ${folderPath}`);
@@ -530,6 +530,71 @@ ipcMain.handle('workspace:generateMap', async (event, folderPath) => {
           }
         }
         return results;
+      };
+
+      // 构建工作区文件索引：basename -> 相对路径，用于第二步检索
+      const buildFileIndex = (baseDir, files) => {
+        const index = new Map(); // basename -> relPath
+        const byFolder = new Map(); // folderName -> Map(basename -> relPath)
+        for (const fullPath of files) {
+          const rel = path.relative(baseDir, fullPath).replace(/\\/g, '/');
+          const base = path.basename(fullPath);
+          const folder = path.dirname(rel);
+          index.set(base, rel);
+          if (folder && folder !== '.') {
+            if (!byFolder.has(folder)) byFolder.set(folder, new Map());
+            byFolder.get(folder).set(base, rel);
+            // 同时注册到一级子文件夹，以便 ### 版块：【diffusion】能匹配 diffusion/博客/note.md
+            const topFolder = folder.split('/')[0];
+            if (topFolder && topFolder !== folder) {
+              if (!byFolder.has(topFolder)) byFolder.set(topFolder, new Map());
+              byFolder.get(topFolder).set(base, rel);
+            }
+          }
+        }
+        return { index, byFolder };
+      };
+
+      // 第二步：在 content 中将 **文件名** 替换为 [文件名](路径)，路径从文件索引检索
+      const injectLinksFromIndex = (content, fileIndex, baseDir, sectionFolder = null) => {
+        const { index, byFolder } = fileIndex;
+        return content.replace(/\*\*([^*]+?)\*\*/g, (match, name) => {
+          const trimmed = name.trim();
+          if (!trimmed || !/[.\u4e00-\u9fa5a-zA-Z0-9_\-\s\[\]()]+\.(md|txt|pdf|png|jpg|jpeg|webp)$/i.test(trimmed)) return match;
+          let relPath = null;
+          if (sectionFolder && byFolder.has(sectionFolder)) {
+            relPath = byFolder.get(sectionFolder).get(trimmed);
+          }
+          if (!relPath) relPath = index.get(trimmed);
+          if (!relPath || !fs.existsSync(path.join(baseDir, relPath))) return match;
+          return `[${trimmed}](${relPath})`;
+        });
+      };
+
+      // 按版块注入链接（全局脉络需根据 ### 版块：【X】确定 sectionFolder）
+      const injectLinksGlobal = (content, fileIndex, baseDir) => {
+        const { index, byFolder } = fileIndex;
+        const sections = content.split(/(?=^###\s+版块：【([^】]+)】)/m);
+        let result = '';
+        let currentFolder = null;
+        for (let i = 0; i < sections.length; i++) {
+          const m = sections[i].match(/^###\s+版块：【([^】]+)】/);
+          if (m) currentFolder = m[1];
+          const chunk = sections[i];
+          const injectChunk = chunk.replace(/\*\*([^*]+?)\*\*/g, (match, name) => {
+            const trimmed = name.trim();
+            if (!trimmed || !/[.\u4e00-\u9fa5a-zA-Z0-9_\-\s\[\]()]+\.(md|txt|pdf|png|jpg|jpeg|webp)$/i.test(trimmed)) return match;
+            let relPath = null;
+            if (currentFolder && byFolder.has(currentFolder)) {
+              relPath = byFolder.get(currentFolder).get(trimmed);
+            }
+            if (!relPath) relPath = index.get(trimmed);
+            if (!relPath || !fs.existsSync(path.join(baseDir, relPath))) return match;
+            return `[${trimmed}](${relPath})`;
+          });
+          result += injectChunk;
+        }
+        return result || content;
       };
 
       // 提取提纲的复用方法
@@ -590,12 +655,14 @@ ipcMain.handle('workspace:generateMap', async (event, folderPath) => {
 1. 你的总结必须百分之百基于提供的文本内容！绝对不允许产生幻觉或编造任何不存在的关联、作者或内容！
 2. 请简要介绍这个子文件夹的整体定位，并重点以列表形式列出各个文件大概讲述了什么客观内容。
 3. 不需要长篇大论的详细解释，重点是真实的导航和索引。输出格式必须为结构化 Markdown。
-4. 【重要】：当你在正文或列表中提到具体的「原文件名称」时，必须使用加粗语法（如 **文件名.pdf** ）或反引号（如 \`文件名.pdf\` ）进行显眼的特殊标记，方便用户快速识别。
+4. 【重要】提及具体文件时，用加粗标注文件名即可，如 **note.md**、**diffusion_1.pdf**。切勿输出路径或链接，系统会自动添加可点击链接。
 
 内容如下：\n${subText}`;
-          const subMapContent = await aiClient.ask(promptSub, null, 0.6, 1500);
+          let subMapContent = await aiClient.ask(promptSub, null, 0.6, 1500);
 
-          // 保存子文件夹的 md
+          // 第二步：在工作区文件索引中检索文件名，注入可点击链接（不依赖 AI 输出路径）
+          const subFileIndex = buildFileIndex(itemPath, subFiles);
+          subMapContent = injectLinksFromIndex(subMapContent, subFileIndex, itemPath, null);
           fs.writeFileSync(path.join(itemPath, `_Knowledge_Map_${item}.md`), subMapContent, 'utf-8');
           rootSummaries.push(`\n### 版块：【${item}】的内容脉络\n${subMapContent}\n`);
           
@@ -620,12 +687,18 @@ const promptFinal = `你是一个非常严谨的学术整理助手。请紧密�
 1. 【红线警告】：绝对不允许自己编造、发散或产生任何原文中没有覆盖的幻觉信息！！！所有的梳理必须建立在给定的数据之上。
 2. 说明各个子版块主要涵盖了什么内容和它们之间的客观宏观逻辑关联，帮助用户能快速了解该工作区的真实知识结构。
 3. 输出格式必须为结构化 Markdown。
-4. 【重要】：当你在正文或列表中提到具体的「原文件名称」时，必须使用加粗语法（如 **文件名** ）或反引号（如 \`文件名\` ）进行显眼的特殊标记，以便用户阅读！
+4. 【重要】提及具体文件时，用加粗标注文件名即可，如 **note.md**、**论文.pdf**。切勿输出路径或链接，系统会在工作区中检索并自动添加可点击链接。
 
 各个区块真实输入数据如下：\n${allText}`;
 
-        const finalMapContent = await aiClient.ask(promptFinal, null, 0.6, 2500);
+        let finalMapContent = await aiClient.ask(promptFinal, null, 0.6, 2500);
         const outputFilePath = path.join(folderPath, '_Knowledge_Map.md');
+
+        // 第二步：构建全局文件索引，在工作区中检索文件名并注入可点击链接（不依赖 AI 输出路径）
+        const allFiles = getTargetFiles(folderPath);
+        const globalFileIndex = buildFileIndex(folderPath, allFiles);
+        finalMapContent = injectLinksGlobal(finalMapContent, globalFileIndex, folderPath);
+
         fs.writeFileSync(outputFilePath, finalMapContent, 'utf-8');
         console.log(`[KnowledgeMap] 全局知识脉络图生成成功: ${outputFilePath}`);
 

@@ -739,8 +739,8 @@ async function displayFileFromPath(filePath, fileName, fileType) {
         if (fileType === 'note' || fileName.endsWith('.md')) {
           const renderedContent = renderMarkdown(result.content);
           div.innerHTML = `<div class="markdown-content">${renderedContent}</div>`;
-          // 绑定本地文件链接点击事件
-          bindLocalFileLinks(div);
+          // 绑定本地文件链接点击事件（传入基准路径以解析相对路径，仿照插入笔记模式）
+          bindLocalFileLinks(div, getDirname(filePath));
         } else {
           div.innerHTML = `<pre style="color: #ffffff; white-space: pre-wrap; padding: 20px;">${escapeHtml(result.content)}</pre>`;
         }
@@ -818,8 +818,8 @@ async function sendAIAnalysisRequest(filePath, fileName, fileType, prompt) {
         });
       });
 
-      // 为本地文件链接添加点击处理，在主界面打开
-      bindLocalFileLinks(contentDiv);
+      // 为本地文件链接添加点击处理，在主界面打开（传入工作区根目录解析相对路径）
+      bindLocalFileLinks(contentDiv, currentFolderPath);
 
       aiMsgDiv.appendChild(contentDiv);
     } else {
@@ -1248,6 +1248,31 @@ function renderMarkdown(markdown) {
     return id;
   });
 
+  // 保护链接语法，避免斜体 _text_ 误解析链接 URL 中的下划线（如 note_1773549342619.md）
+  const protectedLinks = [];
+  html = html.replace(/\[([^\]]+)\]\(([^)]+?)\s*"?\{\{DOWNLOAD_PDF:([^}]+)\}\}"?\)/g, (match, text, url, paperData) => {
+    try {
+      const decodedData = paperData.replace(/&quot;/g, '"');
+      const tag = `<a href="#" class="pdf-download-link" data-paper='${decodedData}'>${text}</a>`;
+      protectedLinks.push(tag);
+      return `@@LINK${protectedLinks.length - 1}@@`;
+    } catch (e) {
+      protectedLinks.push(`<a href="#" class="external-link" data-url="${url}">${text}</a>`);
+      return `@@LINK${protectedLinks.length - 1}@@`;
+    }
+  });
+  // 支持链接文本中含方括号，如 [[web]_扩散模型详解.pdf](path)
+  html = html.replace(/\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^)]+)\)/g, (match, text, url) => {
+    let tag;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      tag = `<a href="#" class="external-link" data-url="${url}">${text}</a>`;
+    } else {
+      tag = `<a href="#" class="local-file-link" data-path="${url}">${text}</a>`;
+    }
+    protectedLinks.push(tag);
+    return `@@LINK${protectedLinks.length - 1}@@`;
+  });
+
   // 先保护下载按钮 HTML 标签（在转义之前）
   const downloadButtons = [];
   const originalHtml = html;
@@ -1314,29 +1339,8 @@ function renderMarkdown(markdown) {
   
   // 删除线 (~~text~~)
   html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
-  
-  // 链接 [text](url) - 为外部链接添加特殊类，使用 shell.openExternal 在默认浏览器打开
-  // 特殊处理 PDF 下载链接：[PDF](url "{{DOWNLOAD_PDF:{data}}}")
-  html = html.replace(/\[([^\]]+)\]\(([^)]+?)\s+"?\{\{DOWNLOAD_PDF:([^}]+)\}\}"?\)/g, (match, text, url, paperData) => {
-    try {
-      const decodedData = paperData.replace(/&quot;/g, '"');
-      return `<a href="#" class="pdf-download-link" data-paper='${decodedData}'>${text}</a>`;
-    } catch (e) {
-      // 解析失败，回退到普通外部链接
-      return `<a href="#" class="external-link" data-url="${url}">${text}</a>`;
-    }
-  });
+  // 注：链接已在斜体处理前保护为 @@LINKn@@，稍后恢复
 
-  // 普通链接 [text](url) - 为外部链接添加特殊类
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
-    // 检测是否是外部链接（http/https）
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return `<a href="#" class="external-link" data-url="${url}">${text}</a>`;
-    }
-    // 本地文件路径（如 E:/知识库/论文.pdf）
-    return `<a href="#" class="local-file-link" data-path="${url}">${text}</a>`;
-  });
-  
   // 水平线 (--- 或 ***)
   html = html.replace(/^---$/gm, '<hr>');
   html = html.replace(/^\*\*\*$/gm, '<hr>');
@@ -1420,6 +1424,9 @@ function renderMarkdown(markdown) {
     } else if (trimmed.match(/^@@INSNOTE\d+@@$/)) {
       // 插入笔记按钮占位符，不包裹在 <p> 中
       result.push(trimmed);
+    } else if (trimmed.match(/^@@LINK\d+@@$/)) {
+      // 链接占位符，不包裹在 <p> 中
+      result.push(trimmed);
     } else {
       // 普通段落
       result.push(`<p>${trimmed}</p>`);
@@ -1448,6 +1455,11 @@ function renderMarkdown(markdown) {
     html = html.replace(`@@INSNOTE${i}@@`, btn);
   });
 
+  // 恢复链接占位符（保护时已生成最终 <a> 标签，此处还原）
+  protectedLinks.forEach((tag, i) => {
+    html = html.replace(`@@LINK${i}@@`, tag);
+  });
+
   return html;
 }
 
@@ -1470,19 +1482,47 @@ function renderMarkdownWithLinks(markdown, container) {
     });
   });
 
-  // 为本地文件链接添加点击处理，在主界面打开
-  bindLocalFileLinks(container);
+  // 为本地文件链接添加点击处理，在主界面打开（传入工作区根目录解析相对路径）
+  bindLocalFileLinks(container, currentFolderPath);
 }
 
 /**
- * 为本地文件链接绑定点击事件
- * @param {HTMLElement} container - 包含链接的容器元素
+ * 从文件路径获取所在目录（兼容渲染进程，不使用 Node path）
  */
-function bindLocalFileLinks(container) {
+function getDirname(filePath) {
+  if (!filePath) return '';
+  return filePath.replace(/[\/\\][^\/\\]*$/, '') || filePath;
+}
+
+/**
+ * 将相对路径解析为绝对路径
+ * @param {string} basePath - 基准目录（如笔记所在文件夹或工作区根目录）
+ * @param {string} relativePath - 相对路径
+ */
+function resolveRelativePath(basePath, relativePath) {
+  if (!basePath || !relativePath) return relativePath;
+  // 已为绝对路径（Windows 含盘符如 C:，或 Unix 以 / 开头）则直接返回
+  if (/^[a-zA-Z]:[\\\/]/.test(relativePath) || relativePath.startsWith('/')) {
+    return relativePath;
+  }
+  const sep = basePath.includes('\\') ? '\\' : '/';
+  const base = basePath.endsWith(sep) ? basePath : basePath + sep;
+  return base + relativePath.replace(/\//g, sep);
+}
+
+/**
+ * 为本地文件链接绑定点击事件（仿照插入笔记 / 聊天消息中的链接处理模式）
+ * @param {HTMLElement} container - 包含链接的容器元素
+ * @param {string} [basePath] - 基准目录，用于解析相对路径（如知识脉络图所在文件夹）。不传则假定路径为绝对路径
+ */
+function bindLocalFileLinks(container, basePath) {
   container.querySelectorAll('.local-file-link').forEach(link => {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
-      const filePath = link.dataset.path;
+      let filePath = link.dataset.path;
+      if (filePath && basePath) {
+        filePath = resolveRelativePath(basePath, filePath);
+      }
       if (filePath) {
         // 根据扩展名确定文件类型
         const ext = filePath.split('.').pop()?.toLowerCase();
@@ -2568,8 +2608,8 @@ function renderMessage(message) {
     });
   });
 
-  // 为本地文件链接添加点击处理，在主界面打开
-  bindLocalFileLinks(content);
+  // 为本地文件链接添加点击处理，在主界面打开（传入工作区根目录解析相对路径）
+  bindLocalFileLinks(content, currentFolderPath);
 
   // 为 PDF 下载链接添加点击处理，直接下载并保存
   content.querySelectorAll('.pdf-download-link').forEach(link => {
@@ -2981,7 +3021,7 @@ function openNoteEditor(filePath, content) {
         }
       });
     });
-    bindLocalFileLinks(preview);
+    bindLocalFileLinks(preview, getDirname(_noteEditorFilePath));
   };
   addLinkHandlers();
 
