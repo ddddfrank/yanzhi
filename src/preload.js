@@ -90,5 +90,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   shell: {
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
     openPath: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
+    showItemInFolder: (filePath) => ipcRenderer.invoke('shell:showItemInFolder', filePath),
   }
 });

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>知识体系管理 - AI科研助手 研知</title>
     <link rel="stylesheet" href="manage.css" />
+    <link rel="stylesheet" href="knowledge-graph.css" />
   </head>
   <body>
     <div class="app-container">
@@ -54,6 +55,7 @@
             <button class="tab-btn active" data-tab="overview">概览</button>
             <button class="tab-btn" data-tab="category">分类管理</button>
             <button class="tab-btn" data-tab="items">知识条目</button>
+            <button class="tab-btn" data-tab="graph">知识图谱</button>
           </div>
         </div>
 
@@ -177,9 +179,112 @@
             </div>
           </div>
         </div>
+        <!-- Knowledge Graph Tab Content -->
+        <div class="tab-content" id="graphTab">
+          <div class="graph-container">
+            <!-- 图谱工具栏 -->
+            <div class="graph-toolbar">
+              <div class="graph-toolbar-left">
+                <button class="graph-tool-btn" id="graphAddNode" title="添加节点">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>添加节点</span>
+                </button>
+                <button class="graph-tool-btn" id="graphAddEdge" title="添加连线">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <span>添加连线</span>
+                </button>
+                <button class="graph-tool-btn" id="graphDelete" title="删除选中">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <span>删除</span>
+                </button>
+                <div class="graph-tool-divider"></div>
+                <button class="graph-tool-btn" id="graphAutoLayout" title="自动布局">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m-7-7h6m6 0h6"/></svg>
+                  <span>自动布局</span>
+                </button>
+                <button class="graph-tool-btn" id="graphFitView" title="适应画布">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                  <span>适应视图</span>
+                </button>
+              </div>
+              <div class="graph-toolbar-right">
+                <button class="graph-tool-btn" id="graphImportData" title="从知识库导入">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>导入知识库</span>
+                </button>
+                <div class="graph-zoom-controls">
+                  <button class="graph-zoom-btn" id="graphZoomOut" title="缩小">−</button>
+                  <span class="graph-zoom-level" id="graphZoomLevel">100%</span>
+                  <button class="graph-zoom-btn" id="graphZoomIn" title="放大">+</button>
+                </div>
+              </div>
+            </div>
+            <!-- HUD 品牌栏 -->
+            <div class="graph-hud">
+              <div class="graph-brand-chip">
+                <span class="graph-brand-dot"></span>
+                <span class="graph-brand-text">Yanzhi Agent</span>
+              </div>
+              <div class="graph-meta-chip">Insight Mode · <strong>Knowledge Graph</strong></div>
+            </div>
+            <!-- 图谱画布 -->
+            <canvas id="graphCanvas"></canvas>
+            <!-- 节点信息悬浮卡片 -->
+            <div class="graph-tooltip" id="graphTooltip" style="display:none;">
+              <div class="graph-tooltip-title" id="tooltipTitle"></div>
+              <div class="graph-tooltip-meta" id="tooltipMeta"></div>
+              <div class="graph-tooltip-desc" id="tooltipDesc"></div>
+              <div class="graph-tooltip-hint">单击选中 | 双击编辑 | 右键更多操作</div>
+            </div>
+            <!-- 添加节点弹窗 -->
+            <div class="graph-modal-overlay" id="graphModalOverlay" style="display:none;">
+              <div class="graph-modal">
+                <div class="graph-modal-header">
+                  <h3 id="graphModalTitle">添加节点</h3>
+                  <button class="graph-modal-close" id="graphModalClose">×</button>
+                </div>
+                <div class="graph-modal-body" id="graphModalBody">
+                  <!-- 动态内容 -->
+                </div>
+                <div class="graph-modal-footer">
+                  <button class="graph-modal-btn cancel" id="graphModalCancel">取消</button>
+                  <button class="graph-modal-btn confirm" id="graphModalConfirm">确认</button>
+                </div>
+              </div>
+            </div>
+            <!-- 连线模式提示 -->
+            <div class="graph-edge-hint" id="graphEdgeHint" style="display:none;">
+              <span>🔗 连线模式：点击起始节点，再点击目标节点完成连线</span>
+              <button class="graph-edge-hint-cancel" id="graphEdgeCancelBtn">取消</button>
+            </div>
+            <!-- 空状态 -->
+            <div class="graph-empty-state" id="graphEmptyState">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(90,140,255,0.4)" stroke-width="1">
+                <circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/>
+                <line x1="8.5" y1="7.5" x2="10" y2="16"/><line x1="15.5" y1="7.5" x2="14" y2="16"/><line x1="9" y1="6" x2="15" y2="6"/>
+              </svg>
+              <h3>知识图谱</h3>
+              <p>通过图谱可视化展示知识之间的关联关系</p>
+              <div class="graph-empty-actions">
+                <button class="graph-empty-btn primary" id="graphEmptyImport">从知识库导入</button>
+                <button class="graph-empty-btn" id="graphEmptyCreate">手动创建</button>
+              </div>
+            </div>
+            <!-- 图例（横排药丸风格） -->
+            <div class="graph-legend" id="graphLegend" style="display:none;">
+              <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#fb7185; color:#fb7185"></div><span>概念</span></div>
+              <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#2fe08d; color:#2fe08d"></div><span>分类</span></div>
+              <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#4da3ff; color:#4da3ff"></div><span>文档</span></div>
+              <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#ffae57; color:#ffae57"></div><span>笔记</span></div>
+              <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#d26cff; color:#d26cff"></div><span>图片</span></div>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
 
+    <script src="knowledge-graph-engine.js"></script>
+    <script src="knowledge-graph.js"></script>
     <script src="manage.js"></script>
   </body>
 </html>

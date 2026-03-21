@@ -1,11 +1,13 @@
 {
   "version": 1,
-  "updatedAt": "2026-03-20T03:53:29.928Z",
+  "updatedAt": "2026-03-20T06:55:37.684Z",
   "pathToWorkspaceId": {
     "c:/users/32665/desktop/test_yanzhi": "test_yanzhi__d545a755",
     "d:/论文阅读": "workspace__7cf6eaa0",
     "c:/users/frunk/desktop/文献": "workspace__f1f8b811",
     "/Users/nnnnm/Desktop/yanzhi-test": "yanzhi-test__aaa15a94",
-    "/Users/nnnnm/Desktop/learn": "learn__29d6da3d"
+    "/Users/nnnnm/Desktop/learn": "learn__29d6da3d",
+    "/Users/cedric/project": "project__c5016be0",
+    "/Users/cedric/project/test_yanzhi": "test_yanzhi__a09b8d56"
   }
 }

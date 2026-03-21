@@ -150,6 +150,8 @@ class WorkspaceScanner {
 
         for (const item of items) {
             if (item.isDirectory()) {
+                // 过滤隐藏文件夹（以 . 开头的文件夹，如 .git, .DS_Store 等）
+                if (item.name.startsWith('.')) continue;
                 const folderPath = path.join(this.currentWorkspace.workspacePath, item.name);
                 folders.push({
                     name: item.name,
@@ -277,6 +279,9 @@ class WorkspaceScanner {
                 const folders = [];
 
                 for (const item of items) {
+                    // 过滤隐藏文件和隐藏文件夹（以 . 开头，如 .DS_Store, .git 等）
+                    if (item.name.startsWith('.')) continue;
+
                     const itemPath = path.join(currentPath, item.name);
                     const itemRelativePath = path.join(relativePath, item.name).replace(/\\/g, '/');
 
@@ -441,6 +446,9 @@ class WorkspaceScanner {
                         }
 
                         for (const item of items) {
+                            // 过滤隐藏文件和隐藏文件夹
+                            if (item.name.startsWith('.')) continue;
+
                             if (item.isDirectory()) {
                                 countRecursive(path.join(currentPath, item.name));
                             } else if (item.isFile()) {
@@ -542,6 +550,9 @@ class WorkspaceScanner {
             const items = fs.readdirSync(dirPath, { withFileTypes: true });
 
             for (const item of items) {
+                // 过滤隐藏文件
+                if (item.name.startsWith('.')) continue;
+
                 if (item.isFile()) {
                     // 跳过JSON配置文件
                     if (item.name.endsWith('.json')) continue;

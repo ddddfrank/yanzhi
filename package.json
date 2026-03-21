@@ -5,7 +5,8 @@
   "description": "My Electron application description",
   "main": "src/index.js",
   "scripts": {
-    "start": "chcp 65001 && electron-forge start",
+    "start": "electron-forge start",
+    "start:win": "chcp 65001 && electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

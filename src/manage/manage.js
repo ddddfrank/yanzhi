@@ -675,8 +675,14 @@ async function fetchKnowledgeItems(categoryId) {
 
     const folderPath = result.folderPath || '';
 
+    // 过滤掉隐藏文件和系统文件
+    const validFiles = (result.files || []).filter(file => {
+      const name = file.name || '';
+      return !name.startsWith('.');
+    });
+
     // 将文件数据转换为知识条目格式
-    return result.files.map((file, index) => {
+    return validFiles.map((file, index) => {
       // 根据文件扩展名确定类型和图标
       let type = 'file';
       let icon = '../../img/file.png';

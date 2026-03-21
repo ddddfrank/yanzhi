@@ -1388,3 +1388,14 @@ ipcMain.handle('shell:openPath', async (event, filePath) => {
     return { success: false, error: err.message };
   }
 });
+
+// 在文件管理器中定位显示文件
+ipcMain.handle('shell:showItemInFolder', async (event, filePath) => {
+  try {
+    shell.showItemInFolder(filePath);
+    return { success: true };
+  } catch (err) {
+    console.error('[Shell] 定位文件失败:', err);
+    return { success: false, error: err.message };
+  }
+});
