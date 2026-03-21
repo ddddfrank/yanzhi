@@ -1,0 +1,21 @@
+{
+    "editor.formatOnSave": true,
+    "python.linting.enabled": true,
+    // Claude Code Extension Settings
+    "[claude-code]": {
+        "editor.defaultFormatter": "anthropic.claude-code"
+    },
+    // Custom Environment Variables for GLM API
+    "terminal.integrated.env.windows": {
+        "GLM_API_KEY": "a30d5d4bbe4e49e1823f6cb64fe2c305.bkvqdk1DBkwu9Oob",
+        "GLM_API_BASE": "https://open.bigmodel.cn/api/paas/v4",
+        "GLM_MODEL": "glm-4-flash"
+    },
+    // Proxy settings (if needed for API access)
+    "http.proxyStrictSSL": false,
+    // Files to exclude
+    "files.exclude": {
+        "**/.env": true,
+        "**/node_modules": true
+    }
+}

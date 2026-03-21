@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研知助手 - AI使用指南</title>
+    <link rel="stylesheet" href="aibot.css">
+</head>
+
+<body>
+    <!-- 悬浮按钮 -->
+    <div id="aibot-trigger" class="aibot-trigger" title="打开AI助手">
+        <div class="aibot-avatar">🤖</div>
+        <!-- <span class="aibot-badge">问</span> -->
+    </div>
+
+    <!-- AI助手窗口 -->
+    <div id="aibot-window" class="aibot-window">
+        <!-- 头部 -->
+        <div class="aibot-header">
+            <div class="aibot-title">
+                <span class="aibot-logo">🤖</span>
+                <span>研知助手</span>
+            </div>
+            <button class="aibot-close" title="关闭">×</button>
+        </div>
+
+        <!-- 消息区域 -->
+        <div id="aibot-messages" class="aibot-messages">
+            <!-- 欢迎消息 -->
+            <div class="aibot-message aibot-message-ai">
+                <div class="aibot-avatar">🤖</div>
+                <div class="aibot-content">
+                    <div class="aibot-text">
+                        你好！我是研知助手 🎓<br><br>
+                        我可以帮助你解答关于研知科研助手使用的问题。<br>
+                        你可以问我：<br>
+                        • 如何安装配置<br>
+                        • 功能使用方法<br>
+                        • 快捷键操作<br>
+                        • 常见问题解决<br><br>
+                        有什么我可以帮助你的吗？
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快捷问题 -->
+        <div class="aibot-quick-questions">
+            <div class="aibot-quick-title">常见问题</div>
+            <div class="aibot-quick-buttons">
+                <button class="aibot-quick-btn" data-question="如何安装和配置研知助手？">如何安装配置？</button>
+                <button class="aibot-quick-btn" data-question="截图功能的快捷键是什么？">截图快捷键？</button>
+                <button class="aibot-quick-btn" data-question="如何添加和分类文献？">如何添加文献？</button>
+                <button class="aibot-quick-btn" data-question="如何配置API密钥？">如何配置API？</button>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="aibot-input-area">
+            <textarea id="aibot-input" class="aibot-textarea" placeholder="输入你的问题..." rows="1"></textarea>
+            <button id="aibot-send" class="aibot-send-btn" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script src="aibot.js"></script>
+</body>
+
+</html>

@@ -248,23 +248,64 @@ ${contentPart}
     async _extractKeywordsFromContent(content) {
         try {
             const { getAIClient } = require('../screenshot/aiClient');
-            const aiClient = getAIClient("你是一个学术关键词提取助手。从文章内容中提取适合 arXiv 搜索的英文关键词。");
+            const systemPrompt = `# 学术文体关键词提取专家
+
+## 角色分配
+你是一个资深的学术文献分析师，擅长从学术文章中精准提取核心概念和技术关键词。你需要提取最能代表文章核心内容的英文关键词，用于arXiv学术搜索。
+
+## 任务
+1. 深度分析文章的核心研究内容
+2. 识别关键的技术概念、方法、理论框架
+3. 提取3-5个最有代表性的英文关键词
+4. 这些关键词应该能够精准匹配相关研究论文
+
+## 参考信息
+### 优先类别
+- 核心技术方法：transformer, attention mechanism, BERT, CNN等
+- 研究领域：machine learning, computer vision, NLP等
+- 特定问题：classification, object detection, sentiment analysis等
+- 创新点：novel approach, optimization, improvement等
+
+### 应避免
+- 过于宽泛的词：study, research, analysis, method, development
+- 通用词：paper, article, we, this work
+- 过于具体的名词：author name, institution
+
+## 输出要求
+1. 仅返回英文关键词，不含任何解释
+2. 用空格分隔多个关键词
+3. 关键词应该是学术界公认的术语
+4. 按照重要性从高到低排列
+5. 每个关键词简洁清晰（通常1-3个单词）
+
+## 示例
+文章内容："我们提出了一个基于Transformer的视觉识别框架..."
+输出：transformer vision recognition deep learning
+
+文章内容："本文采用LSTM网络进行时间序列预测..."
+输出：LSTM time series prediction recurrent neural network
+
+## 输出项示例
+keyword1 keyword2 keyword3 keyword4 keyword5`;
+            const aiClient = getAIClient(systemPrompt);
 
             // 只使用前3页的内容（约6000字符）来减少 token 消耗
             const limitedContent = content.substring(0, 6000);
 
-            const prompt = `分析以下学术文章，提取3-5个最适合在 arXiv 搜索相关论文的英文关键词。
+            const userPrompt = `## 文章分析
+请从以下文章内容中提取最适合arXiv搜索的核心关键词。
 
-要求：
-1. 优先提取核心技术概念、方法名称、研究领域
-2. 使用学术界常用的英文术语（如 "transformer", "attention mechanism"）
-3. 避免过于宽泛的词（如 "study", "analysis", "research"）
-4. 用空格分隔，只返回关键词
+**文章内容预览：**
+${limitedContent}
 
-文章内容：
-${limitedContent}`;
+## 提取指南
+1. 重点关注：核心技术、研究方法、创新点
+2. 优先级：越能体现论文价值的关键词优先级越高
+3. 确保关键词在学术搜索中能找到相关论文
+4. 返回格式：关键词1 关键词2 关键词3 ... （仅英文关键词，用空格分隔）`;
+            const keywords = await aiClient.ask(userPrompt, null, 0.3, 100);
 
-            const keywords = await aiClient.ask(prompt, null, 0.3, 100);
+
             return keywords.trim() || 'machine learning';
         } catch (e) {
             console.error('[Recommend] 提取关键词失败:', e);
@@ -280,12 +321,61 @@ ${limitedContent}`;
     async _extractKeywordsFromQuery(query) {
         try {
             const { getAIClient } = require('../screenshot/aiClient');
-            const aiClient = getAIClient("你是一个关键词提取助手。从用户请求中提取学术搜索关键词。只返回英文关键词，用空格分隔。");
+            const systemPrompt = `# 学术搜索关键词智能提取器
 
-            const keywords = await aiClient.ask(
-                `从以下请求中提取适合 arXiv 搜索的英文关键词（用空格分隔，只返回关键词）：\n${query}`,
-                null, 0.3, 100
-            );
+## 角色分配
+你是一个专业的学术搜索关键词提取专家，能够准确理解用户意图并将其转化为高效的arXiv搜索关键词。你需要从自然语言请求中捕捉核心研究概念。
+
+## 任务
+将用户的自然语言搜索请求转化为精简、高效的英文关键词组合，用于arXiv论文库搜索，帮助用户快速找到相关研究。
+
+## 参考信息
+### 常见研究领域和技术术语映射
+- 深度学习 → deep learning, neural network, convolutional neural network（CNN）
+- 视觉 → computer vision, visual recognition, image processing
+- 自然语言 → natural language processing（NLP）, language model, text analysis
+- 强化学习 → reinforcement learning, policy gradient, Q-learning
+- 机器学习 → machine learning, supervised learning, unsupervised learning
+- 特定方法 → attention mechanism, transformer, LSTM, GAN, diffusion model
+
+### 优化建议
+- 优先提取专有技术名词（如BERT、GPT、ResNet）
+- 识别领域标签（如robotics、medical imaging、recommendation system）
+- 避免通用动词和助词（improve, propose, novel, method）
+
+## 输出要求
+1. 仅返回英文关键词，多个词用空格分隔（无逗号、无中文）
+2. 提取2-4个核心关键词为最佳
+3. 关键词顺序按重要性降序排列
+4. 拒绝返回无意义的词汇，宁可少也不要多
+5. 完全匹配学术术语标准写法
+
+## 示例
+**用户请求**: "我想找关于图像识别的论文"
+**输出**: image recognition computer vision deep learning
+
+**用户请求**: "推荐一些Transformer在NLP上的应用"
+**输出**: transformer natural language processing NLP
+
+**用户请求**: "最近有什么关于强化学习在机器人控制的研究"
+**输出**: reinforcement learning robotics control policy
+
+## 输出项示例
+keyword1 keyword2 keyword3`;
+            const aiClient = getAIClient(systemPrompt);
+
+            const userPrompt = `## 用户搜索请求分析
+请从以下用户请求中提取最核心的学术搜索关键词。
+
+**用户请求**：${query}
+
+## 提取指南
+1. 识别主要研究方向和技术方法
+2. 转化为学术标准英文术语
+3. 排除冗余和通用词汇
+4. 仅返回关键词，空格分隔，无其他内容`;
+
+            const keywords = await aiClient.ask(userPrompt, null, 0.3, 100);
             return keywords.trim() || 'machine learning';
         } catch (e) {
             console.error('[Recommend] 提取关键词失败:', e);

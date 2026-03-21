@@ -142,6 +142,82 @@ const createWindow = () => {
   mainLog.info('createWindow', { width: 1400, height: 900, startupPage });
   mainWindow.loadFile(startupPage);
 
+  // 页面加载完成后注入AI助手
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('[AI] 开始加载研知AI助手...');
+
+    try {
+      // 读取AI助手HTML文件
+      const path = require('path'); // Node.js内置的路径处理模块，必须先引入
+      const aibotHtmlPath = path.join(__dirname, 'aibot', 'aibot.html');
+      const aibotHtml = fs.readFileSync(aibotHtmlPath, 'utf-8');
+
+      // 提取CSS和JS内容（因为它们引用相对路径）
+      // 注意：主页面在 src/main/ 目录下，所以需要使用 ../aibot/ 路径
+      const injectScript = `
+        (function() {
+          const injectAIAssistant = () => {
+            // 创建AI助手CSS链接
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = '../aibot/aibot.css';
+            document.head.appendChild(cssLink);
+
+            // 创建AI助手容器
+            const aibotContainer = document.createElement('div');
+            aibotContainer.id = 'aibot-container';
+            document.body.appendChild(aibotContainer);
+
+            // 创建AI助手脚本
+            const script = document.createElement('script');
+            script.src = '../aibot/aibot.js';
+            script.onload = () => {
+              console.log('[AI] 研知AI助手脚本加载完成');
+              // 手动初始化AI助手（因为DOMContentLoaded已经触发过了）
+              if (typeof YanzhiAIBot !== 'undefined') {
+                window.yanzhiAIBot = new YanzhiAIBot();
+                console.log('[AI] 研知AI助手已手动初始化');
+              }
+            };
+            document.body.appendChild(script);
+
+            // 注入AI助手的HTML结构（从aibot.html提取）
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(${JSON.stringify(aibotHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/g, ''))}, 'text/html');
+            const trigger = doc.getElementById('aibot-trigger');
+            const aibotWindow = doc.getElementById('aibot-window');
+            if (trigger) {
+              document.body.appendChild(trigger);
+              console.log('[AI] AI助手触发按钮已添加');
+            }
+            if (aibotWindow) {
+              document.body.appendChild(aibotWindow);
+              console.log('[AI] AI助手窗口已添加');
+            }
+          };
+
+          // 等待DOM准备好后注入
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectAIAssistant);
+          } else {
+            injectAIAssistant();
+          }
+        })();
+      `;
+
+      mainWindow.webContents.executeJavaScript(injectScript)
+        .then(() => {
+          console.log('[AI] AI助手注入完成');
+        })
+        .catch((error) => {
+          console.error('[AI] AI助手注入失败:', error);
+        });
+
+    } catch (error) {
+      console.error('[AI] 读取AI助手文件失败:', error);
+    }
+  });
+
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 

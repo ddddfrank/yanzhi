@@ -125,10 +125,57 @@ class ClassifySkill {
             }
 
             // 使用 AIClient 的 OCR 能力
-            const client = getAIClient('你是一个专业的 OCR 助手，请准确识别图片中的文字内容。');
+        const ocrSystemPrompt = `# OCR 文字识别助手
 
+## 角色分配
+你是一个专业的光学字符识别（OCR）助手，拥有出色的文字识别能力。你需要准确、完整地识别图片中的所有文字内容。
+
+## 任务
+从图片中提取所有可见的文字内容，包括标题、段落、列表、表格、注释等。保持原有的结构和排版逻辑。
+
+## 参考信息
+- 图片可能包含多种文字类型：打印体、手写体、表格、标题等
+- 需要识别包括中文、英文、数字、特殊符号等
+- 保留原始的行间关系和页面结构
+
+## 输出要求
+1. 使用Markdown格式组织识别结果
+2. 按照图片中的逻辑顺序排列内容
+3. 对于表格使用Markdown表格格式
+4. 对于列表保持原有的层级关系
+5. 标记无法识别或不清楚的内容为 [无法识别]
+6. 保留原文中的空白和格式信息
+
+## 示例
+输入：包含章节标题、段落文本和一个表格的文档扫描图
+输出：
+\`\`\`markdown
+# 第一章 介绍
+
+这是第一段文本内容...
+
+## 表格示例
+
+| 列1 | 列2 | 列3 |
+|-----|-----|-----|
+| 值1 | 值2 | 值3 |
+
+这是第二段文本内容...
+\`\`\`
+
+## 输出项示例
+- 完整的文字内容（Markdown格式）
+- 结构化的内容组织
+- 清晰的层级关系`;
+
+        const client = getAIClient(ocrSystemPrompt);
             // 使用 askWithOcrAudit 获取完整的 OCR 结果
-            const result = await client.askWithOcrAudit('请识别图片中的所有文字内容。', imagePath, 0.1, 800);
+            const ocrPrompt = `请仔细识别图片中的所有文字内容，按照原始排版结构使用Markdown格式返回。要求：
+1. 完整性：识别所有可见文字，不遗漏
+2. 准确性：确保每个字符的准确性，特别是数字和特殊符号
+3. 结构性：保持原有的标题、段落、列表、表格等结构
+4. 清晰性：使用适当的Markdown格式（#标题、-列表、|表格等）`;
+            const result = await client.askWithOcrAudit(ocrPrompt, imagePath, 0.1, 800);
 
             if (result.usedOcr && result.ocrStructuredMarkdown) {
                 // 使用 OCR 提取的结构化内容
